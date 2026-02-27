@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import Head from 'next/head';
 
-// 定义数据类型
 type LevelFeedback = { evaluation: any, samples: any };
 type ResultData = { level1?: LevelFeedback, level2?: LevelFeedback, level3?: LevelFeedback };
 
@@ -50,7 +49,6 @@ export default function RephraseApp() {
     setLoading(false);
   };
 
-  // 🛡️ 防崩溃安全锁
   const safeRender = (content: any) => {
     if (!content) return "等待解析...";
     if (typeof content === 'string') return content;
@@ -60,26 +58,25 @@ export default function RephraseApp() {
     return JSON.stringify(content, null, 2);
   };
 
-  // 💡 提取出一个通用的【反馈结果卡片】组件，保持代码干净
   const FeedbackBlock = ({ data, focusTitle }: { data?: LevelFeedback, focusTitle: string }) => {
     if (!data) return null;
     return (
-      <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-blue-100 pt-6">
-        <div className="p-5 bg-slate-50 rounded-xl border border-slate-200">
-          <h2 className="text-md font-bold text-slate-700 mb-3 flex items-center">
+      <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6 border-t border-blue-100 pt-6">
+        <div className="p-6 bg-slate-50 rounded-xl border border-slate-200">
+          <h2 className="text-md font-bold text-slate-700 mb-4 flex items-center">
             <span className="bg-blue-100 text-blue-600 px-2 py-1 rounded text-xs mr-2">📝</span> 
             {focusTitle}点评
           </h2>
-          <div className="whitespace-pre-wrap leading-relaxed text-slate-700 text-sm">
+          <div className="whitespace-pre-wrap leading-relaxed text-slate-700 text-[15px]">
             {safeRender(data.evaluation)}
           </div>
         </div>
-        <div className="p-5 bg-blue-50/50 rounded-xl border border-blue-100">
-          <h2 className="text-md font-bold text-blue-800 mb-3 flex items-center">
+        <div className="p-6 bg-blue-50/50 rounded-xl border border-blue-100">
+          <h2 className="text-md font-bold text-blue-800 mb-4 flex items-center">
             <span className="bg-white text-blue-600 px-2 py-1 rounded shadow-sm text-xs mr-2">💡</span> 
-            参考答案 (不少于3种)
+            参考答案 (纯英文)
           </h2>
-          <div className="whitespace-pre-wrap leading-relaxed text-slate-800 text-sm">
+          <div className="whitespace-pre-wrap leading-relaxed text-slate-800 text-[15px] font-medium">
             {safeRender(data.samples)}
           </div>
         </div>
@@ -94,27 +91,26 @@ export default function RephraseApp() {
         <script src="https://cdn.tailwindcss.com"></script>
       </Head>
       
-      <div className="w-full max-w-4xl bg-white rounded-2xl shadow-sm border border-blue-100 p-6 md:p-10">
+      {/* 这里将宽度加宽到了 max-w-6xl，且增加了 padding */}
+      <div className="w-full max-w-6xl bg-white rounded-3xl shadow-sm border border-blue-100 p-8 md:p-14">
         <h1 className="text-3xl font-bold text-blue-600 mb-2 text-center">English Rephrase Coach</h1>
-        <p className="text-sm text-slate-500 mb-8 text-center">雅思 / FCE 口语换词跟练助手</p>
+        <p className="text-sm text-slate-500 mb-10 text-center"> 口语跟练助手</p>
 
-        {/* 顶部题目区 */}
-        <div className="bg-blue-600 text-white rounded-xl p-6 mb-10 relative shadow-md">
+        <div className="bg-blue-600 text-white rounded-2xl p-8 mb-12 relative shadow-md">
           <span className="text-xs font-bold text-blue-200 uppercase tracking-wider">Original Sentence</span>
-          <p className="text-2xl font-medium mt-2">{topic}</p>
-          <button onClick={generateTopic} className="absolute right-6 top-6 bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors">
+          <p className="text-2xl font-medium mt-3">{topic}</p>
+          <button onClick={generateTopic} className="absolute right-8 top-8 bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
             ↻ 新挑战
           </button>
         </div>
 
-        <div className="space-y-8">
-          {/* Level 1 模块 */}
-          <div className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm">
-            <label className="text-lg font-bold text-slate-700 flex items-center">
+        <div className="space-y-10">
+          <div className="bg-white border border-slate-200 p-8 rounded-2xl shadow-sm">
+            <label className="text-lg font-bold text-slate-700 flex items-center mb-2">
               <span className="bg-blue-100 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center mr-3 text-sm">L1</span>
               词汇升级 (Synonyms)
             </label>
-            <p className="text-sm text-slate-500 mt-1 mb-4 ml-11">尝试把普通词汇换成更精准、高级的雅思词汇。</p>
+            <p className="text-sm text-slate-500 mb-5 ml-11">尝试把普通词汇换成更精准、高级的雅思词汇。</p>
             <input 
               className="w-full p-4 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-400 outline-none text-lg bg-slate-50"
               placeholder="你的答案..."
@@ -123,13 +119,12 @@ export default function RephraseApp() {
             <FeedbackBlock data={result?.level1} focusTitle="词汇运用" />
           </div>
 
-          {/* Level 2 模块 */}
-          <div className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm">
-            <label className="text-lg font-bold text-slate-700 flex items-center">
+          <div className="bg-white border border-slate-200 p-8 rounded-2xl shadow-sm">
+            <label className="text-lg font-bold text-slate-700 flex items-center mb-2">
               <span className="bg-blue-100 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center mr-3 text-sm">L2</span>
               句式转换 (Structure)
             </label>
-            <p className="text-sm text-slate-500 mt-1 mb-4 ml-11">尝试改变句子结构，如使用被动语态、强调句、定语从句等。</p>
+            <p className="text-sm text-slate-500 mb-5 ml-11">尝试改变句子结构，如使用被动语态、强调句、定语从句等。</p>
             <input 
               className="w-full p-4 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-400 outline-none text-lg bg-slate-50"
               placeholder="你的答案..."
@@ -138,13 +133,12 @@ export default function RephraseApp() {
             <FeedbackBlock data={result?.level2} focusTitle="句式结构" />
           </div>
 
-          {/* Level 3 模块 */}
-          <div className="bg-white border border-slate-200 p-6 rounded-2xl shadow-sm">
-            <label className="text-lg font-bold text-slate-700 flex items-center">
+          <div className="bg-white border border-slate-200 p-8 rounded-2xl shadow-sm">
+            <label className="text-lg font-bold text-slate-700 flex items-center mb-2">
               <span className="bg-blue-100 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center mr-3 text-sm">L3</span>
               地道口语 (Idioms & Fillers)
             </label>
-            <p className="text-sm text-slate-500 mt-1 mb-4 ml-11">尝试加入 native speaker 常用的连接词、习语或短语动词。</p>
+            <p className="text-sm text-slate-500 mb-5 ml-11">尝试加入 native speaker 常用的连接词、习语或短语动词。</p>
             <input 
               className="w-full p-4 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-400 outline-none text-lg bg-slate-50"
               placeholder="你的答案..."
@@ -156,13 +150,13 @@ export default function RephraseApp() {
 
         <button 
           onClick={handleSubmit} disabled={loading || !levels.lv1}
-          className="w-full mt-10 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl transition-all shadow-md disabled:bg-slate-300 disabled:shadow-none text-lg"
+          className="w-full mt-12 bg-blue-600 hover:bg-blue-700 text-white font-bold py-5 rounded-xl transition-all shadow-md disabled:bg-slate-300 disabled:shadow-none text-xl"
         >
-          {loading ? "AI 教练正在多维度评分中..." : "提交全部答案"}
+          {loading ? "正在多维度评分中..." : "提交全部答案"}
         </button>
 
         {errorMsg && (
-          <div className="mt-6 text-red-500 text-center font-medium bg-red-50 py-3 rounded-lg border border-red-100">{errorMsg}</div>
+          <div className="mt-8 text-red-500 text-center font-medium bg-red-50 py-4 rounded-lg border border-red-100">{errorMsg}</div>
         )}
       </div>
     </div>
