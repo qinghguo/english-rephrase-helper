@@ -11,10 +11,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const { topic, lv1, lv2, lv3 } = req.body;
+    const { topic, lv1, lv2, lv3, standard } = req.body;
+    
+    // 动态判断当前用户选择的标准
+    const standardText = standard === 'fce' ? 'Cambridge FCE 卓越水平 (Grade A)' : '雅思口语 8.0 分水平';
 
     const prompt = `
-      你是一个专业的英语口语教练，精通 Cambridge FCE 和 IELTS 考试的评分标准。
+      你是一个专业的英语口语教练，精通 ${standardText} 的评分标准。
       请分析用户对以下原句的三次不同维度的Rephrase（换种说法）尝试：
       原句: "${topic}"
 
@@ -25,31 +28,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       要求：
       请严格以合法的 JSON 格式输出，包含 "level1", "level2", "level3" 三个核心字段。
-      在每个 level 字段内部，必须包含 "fce" 和 "ielts" 两个子字段，分别代表【FCE口语卓越水平(Grade A)】和【雅思口语8分水平】。
-      在 "fce" 和 "ielts" 内部，均需包含 "evaluation" 和 "samples" 两个字段。
+      在每个 level 字段内部，包含 "evaluation" 和 "samples" 两个子字段。
 
-      具体点评与参考答案要求：
-      1. evaluation (中文): 针对用户的输入，分别以 FCE 卓越水平和 雅思8分 的标准进行专业点评。
+      具体点评与参考答案要求（严格基于 ${standardText}）：
+      1. evaluation (必须完全使用中文): 针对用户的输入进行专业点评。指出优点和可以改进的地方。
       2. samples (全英文): 
-         - FCE (Grade A) 水平：提供不少于3种符合该水平的高分表达，偏向自然、地道、灵动的交流感。
-         - 雅思 (Band 8.0) 水平：提供不少于3种符合该水平的高阶表达，偏向用词精准、逻辑严密、学术感强。
-         - 注意：L2 的 samples 必须在每个答案开头用中括号标注所使用的句式（如：[强调句] It is...）。
+         - 提供不少于3种符合 ${standardText} 的高分表达。
+         - 注意：Level 2 的 samples 必须在每个答案开头用中括号标注所使用的句式（如：[强调句] It is...）。
          - 绝对不要附带任何中文解释或翻译。
 
       示例 JSON 结构：
       {
-        "level1": { 
-          "fce": { "evaluation": "...", "samples": "1. ...\\n2. ...\\n3. ..." },
-          "ielts": { "evaluation": "...", "samples": "1. ...\\n2. ...\\n3. ..." }
-        },
-        "level2": { 
-          "fce": { "evaluation": "...", "samples": "[被动语态] ...\\n[强调句] ...\\n[倒装句] ..." },
-          "ielts": { "evaluation": "...", "samples": "[从句] ...\\n[非谓语] ...\\n[虚拟语气] ..." }
-        },
-        "level3": {
-          "fce": { "evaluation": "...", "samples": "..." },
-          "ielts": { "evaluation": "...", "samples": "..." }
-        }
+        "level1": { "evaluation": "中文点评内容...", "samples": "1. ...\\n2. ...\\n3. ..." },
+        "level2": { "evaluation": "中文点评内容...", "samples": "[被动语态] ...\\n[强调句] ...\\n[倒装句] ..." },
+        "level3": { "evaluation": "中文点评内容...", "samples": "1. ...\\n2. ...\\n3. ..." }
       }
       绝对不要输出任何除了 JSON 以外的内容。
     `;
