@@ -5,27 +5,30 @@ type LevelFeedback = { evaluation?: any, samples: any };
 type ResultData = { level1?: LevelFeedback, level2?: LevelFeedback, level3?: LevelFeedback };
 
 export default function RephraseApp() {
-  // 核心状态：控制当前是哪种模式 ('practice' | 'direct')
   const [mode, setMode] = useState<'practice' | 'direct'>('practice');
   
+  // ================= 模式一（跟练）独立状态 =================
   const [topic, setTopic] = useState("Click '↻ AI 随机生成考题' to start!");
-  const [directInput, setDirectInput] = useState(""); // 模式二：用户自己输入的句子
-  
   const [levels, setLevels] = useState({ lv1: '', lv2: '', lv3: '' });
-  const [result, setResult] = useState<ResultData | null>(null);
-  
+  const [practiceResult, setPracticeResult] = useState<ResultData | null>(null);
+  const [practiceResultStandard, setPracticeResultStandard] = useState<'fce' | 'ielts'>('fce');
+
+  // ================= 模式二（直出）独立状态 =================
+  const [directInput, setDirectInput] = useState(""); 
+  const [directResult, setDirectResult] = useState<ResultData | null>(null);
+  const [directResultStandard, setDirectResultStandard] = useState<'fce' | 'ielts'>('fce');
+
+  // ================= 公共控制状态 =================
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
-  
-  const [standard, setStandard] = useState<'fce' | 'ielts'>('fce');
-  const [resultStandard, setResultStandard] = useState<'fce' | 'ielts'>('fce');
+  const [standard, setStandard] = useState<'fce' | 'ielts'>('fce'); // 底部开关的当前值
 
   // 模式一：AI 随机出题
   const generateTopic = async () => {
     setGenerating(true);
     setTopic("AI 正在为您生成全新考题...");
-    setResult(null);
+    setPracticeResult(null); // 出新题时只清空模式一的旧结果
     setErrorMsg("");
     setLevels({ lv1: '', lv2: '', lv3: '' });
     
@@ -51,7 +54,10 @@ export default function RephraseApp() {
       });
       const data = await response.json();
       if (data.error) setErrorMsg(data.error);
-      else { setResult(data); setResultStandard(standard); }
+      else { 
+        setPracticeResult(data); 
+        setPracticeResultStandard(standard); // 记录模式一出结果时的标准（为了上色）
+      }
     } catch (error) {
       setErrorMsg("网络或 API 错误，请稍后再试。");
     }
@@ -63,7 +69,7 @@ export default function RephraseApp() {
     if (!directInput.trim()) return;
     setLoading(true);
     setErrorMsg("");
-    setResult(null);
+    setDirectResult(null); // 提交新句子时只清空模式二的旧结果
     try {
       const response = await fetch('/api/direct', {
         method: 'POST',
@@ -72,14 +78,17 @@ export default function RephraseApp() {
       });
       const data = await response.json();
       if (data.error) setErrorMsg(data.error);
-      else { setResult(data); setResultStandard(standard); }
+      else { 
+        setDirectResult(data); 
+        setDirectResultStandard(standard); // 记录模式二出结果时的标准
+      }
     } catch (error) {
       setErrorMsg("网络或 API 错误，请稍后再试。");
     }
     setLoading(false);
   };
 
-  // 高亮渲染器
+  // 文本高亮渲染器
   const renderFormattedText = (content: any, isSample: boolean = false) => {
     if (!content) return "等待解析...";
     let text = typeof content === 'string' ? content : (Array.isArray(content) ? content.join('\n\n') : JSON.stringify(content, null, 2));
@@ -102,8 +111,8 @@ export default function RephraseApp() {
     });
   };
 
-  // 模式一：带点评的卡片
-  const PracticeFeedbackBlock = ({ data, focusTitle }: { data?: LevelFeedback, focusTitle: string }) => {
+  // 模式一：带点评的卡片 (接收自己的 resultStandard)
+  const PracticeFeedbackBlock = ({ data, focusTitle, resultStandard }: { data?: LevelFeedback, focusTitle: string, resultStandard: 'fce'|'ielts' }) => {
     if (!data) return null;
     const isFce = resultStandard === 'fce';
     return (
@@ -122,8 +131,8 @@ export default function RephraseApp() {
     );
   };
 
-  // 模式二：只显示范例的卡片
-  const DirectFeedbackBlock = ({ title, data }: { title: string, data?: LevelFeedback }) => {
+  // 模式二：只显示范例的卡片 (接收自己的 resultStandard)
+  const DirectFeedbackBlock = ({ title, data, resultStandard }: { title: string, data?: LevelFeedback, resultStandard: 'fce'|'ielts' }) => {
     if (!data) return null;
     const isFce = resultStandard === 'fce';
     return (
@@ -146,17 +155,17 @@ export default function RephraseApp() {
       <div className="w-full max-w-6xl bg-white rounded-3xl shadow-sm border border-slate-200 p-8 md:p-14">
         <h1 className="text-3xl font-bold text-slate-800 mb-6 text-center">English Rephrase Coach</h1>
         
-        {/* 🚀 双模式切换选项卡 */}
+        {/* 🚀 双模式切换选项卡 (移除了重置结果的逻辑) */}
         <div className="flex justify-center mb-10">
           <div className="bg-slate-100 p-1.5 rounded-xl inline-flex shadow-inner">
             <button 
-              onClick={() => { setMode('practice'); setResult(null); }}
+              onClick={() => setMode('practice')}
               className={`px-8 py-2.5 rounded-lg text-sm font-bold transition-all ${mode === 'practice' ? 'bg-white text-blue-600 shadow' : 'text-slate-500 hover:text-slate-700'}`}
             >
               ✍️ 闯关跟练模式
             </button>
             <button 
-              onClick={() => { setMode('direct'); setResult(null); }}
+              onClick={() => setMode('direct')}
               className={`px-8 py-2.5 rounded-lg text-sm font-bold transition-all ${mode === 'direct' ? 'bg-white text-blue-600 shadow' : 'text-slate-500 hover:text-slate-700'}`}
             >
               ⚡️ 自定义一键改写
@@ -182,17 +191,17 @@ export default function RephraseApp() {
               <div className="bg-white border border-slate-200 p-8 rounded-2xl shadow-sm">
                 <label className="text-lg font-bold text-slate-700 flex items-center mb-4"><span className="bg-blue-100 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center mr-3 text-sm">L1</span>词汇升级 (Synonyms)</label>
                 <input className="w-full p-4 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-400 outline-none text-xl bg-slate-50" placeholder="尝试换用高级词汇..." value={levels.lv1} onChange={(e) => setLevels({...levels, lv1: e.target.value})} />
-                <PracticeFeedbackBlock data={result?.level1} focusTitle="词汇运用" />
+                <PracticeFeedbackBlock data={practiceResult?.level1} focusTitle="词汇运用" resultStandard={practiceResultStandard} />
               </div>
               <div className="bg-white border border-slate-200 p-8 rounded-2xl shadow-sm">
                 <label className="text-lg font-bold text-slate-700 flex items-center mb-4"><span className="bg-blue-100 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center mr-3 text-sm">L2</span>句式转换 (Structure)</label>
                 <input className="w-full p-4 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-400 outline-none text-xl bg-slate-50" placeholder="尝试改变句子结构..." value={levels.lv2} onChange={(e) => setLevels({...levels, lv2: e.target.value})} />
-                <PracticeFeedbackBlock data={result?.level2} focusTitle="句式结构" />
+                <PracticeFeedbackBlock data={practiceResult?.level2} focusTitle="句式结构" resultStandard={practiceResultStandard} />
               </div>
               <div className="bg-white border border-slate-200 p-8 rounded-2xl shadow-sm">
                 <label className="text-lg font-bold text-slate-700 flex items-center mb-4"><span className="bg-blue-100 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center mr-3 text-sm">L3</span>地道口语 (Idioms & Fillers)</label>
                 <input className="w-full p-4 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-400 outline-none text-xl bg-slate-50" placeholder="尝试加入连接词或习语..." value={levels.lv3} onChange={(e) => setLevels({...levels, lv3: e.target.value})} />
-                <PracticeFeedbackBlock data={result?.level3} focusTitle="地道表达" />
+                <PracticeFeedbackBlock data={practiceResult?.level3} focusTitle="地道表达" resultStandard={practiceResultStandard} />
               </div>
             </div>
           </div>
@@ -212,13 +221,12 @@ export default function RephraseApp() {
               />
             </div>
 
-            {/* 一键改写结果展示 */}
-            {result && (
+            {directResult && (
               <div className="space-y-6 mt-10">
                 <h2 className="text-xl font-bold text-slate-700 mb-6 text-center">✨ AI 改写方案</h2>
-                <DirectFeedbackBlock title="🎯 Level 1: 词汇升级 (Synonyms)" data={result.level1} />
-                <DirectFeedbackBlock title="📐 Level 2: 句式转换 (Structure)" data={result.level2} />
-                <DirectFeedbackBlock title="🗣️ Level 3: 地道口语 (Idioms & Fillers)" data={result.level3} />
+                <DirectFeedbackBlock title="🎯 Level 1: 词汇升级 (Synonyms)" data={directResult.level1} resultStandard={directResultStandard} />
+                <DirectFeedbackBlock title="📐 Level 2: 句式转换 (Structure)" data={directResult.level2} resultStandard={directResultStandard} />
+                <DirectFeedbackBlock title="🗣️ Level 3: 地道口语 (Idioms & Fillers)" data={directResult.level3} resultStandard={directResultStandard} />
               </div>
             )}
           </div>
