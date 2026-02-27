@@ -30,19 +30,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       具体关注点与点评要求：
       1. level1：
          - evaluation (中文): 专注点评【词汇替换】是否准确、高级。
-         - samples (中英双语): 提供不少于 3 种侧重【词汇升级】的高分参考答案。
+         - samples (全英文): 提供不少于 3 种侧重【词汇升级】的高分参考答案。**不要附带任何中文解释或翻译**。
       2. level2：
          - evaluation (中文): 专注点评【句式结构】（如被动语态、从句、强调句、非谓语等）的运用。
-         - samples (中英双语): 提供不少于 3 种侧重【句式变换】的高分参考答案。
+         - samples (全英文): 提供不少于 3 种侧重【句式变换】的高分参考答案。**不要附带中文解释**，但**必须在每个答案开头用中括号标注所使用的句式**（例如：[强调句] It is the strategy that... / [被动语态] Board games are often...）。
       3. level3：
          - evaluation (中文): 专注点评【地道感】（如俚语、固定搭配、连接词、phrasal verbs等）。
-         - samples (中英双语): 提供不少于 3 种侧重【地道口语表达】的高分参考答案。
+         - samples (全英文): 提供不少于 3 种侧重【地道口语表达】的高分参考答案。**不要附带任何中文解释或翻译**。
 
       示例 JSON 结构：
       {
-        "level1": { "evaluation": "...", "samples": "..." },
-        "level2": { "evaluation": "...", "samples": "..." },
-        "level3": { "evaluation": "...", "samples": "..." }
+        "level1": { "evaluation": "...", "samples": "1. ...\\n2. ...\\n3. ..." },
+        "level2": { "evaluation": "...", "samples": "[句式A] ...\\n[句式B] ...\\n[句式C] ..." },
+        "level3": { "evaluation": "...", "samples": "1. ...\\n2. ...\\n3. ..." }
       }
       绝对不要输出任何除了 JSON 以外的内容。
     `;
