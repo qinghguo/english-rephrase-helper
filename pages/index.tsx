@@ -4,7 +4,8 @@ import Head from 'next/head';
 export default function RephraseApp() {
   const [topic, setTopic] = useState("Click 'New Challenge' to start!");
   const [levels, setLevels] = useState({ lv1: '', lv2: '', lv3: '' });
-  const [result, setResult] = useState<{evaluation: string, samples: string} | null>(null);
+  // 这里放宽了类型限制，允许接收任何格式的数据
+  const [result, setResult] = useState<{evaluation: any, samples: any} | null>(null);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
@@ -46,6 +47,18 @@ export default function RephraseApp() {
     setLoading(false);
   };
 
+  // 🛡️ 防崩溃安全锁：把 GPT 返回的任何奇怪格式都转成安全的文本
+  const safeRender = (content: any) => {
+    if (!content) return "AI 没有返回有效内容";
+    if (typeof content === 'string') return content;
+    if (Array.isArray(content)) {
+      // 如果是数组，就把每一项用换行拼起来，如果是对象数组，就进一步安全序列化
+      return content.map(item => typeof item === 'string' ? item : JSON.stringify(item, null, 2)).join('\n\n');
+    }
+    // 如果是对象，格式化成文本显示，防止 React 崩溃
+    return JSON.stringify(content, null, 2);
+  };
+
   return (
     <div className="min-h-screen bg-blue-50 py-12 px-4 md:px-8 font-sans text-slate-800 flex flex-col items-center">
       <Head>
@@ -53,7 +66,6 @@ export default function RephraseApp() {
         <script src="https://cdn.tailwindcss.com"></script>
       </Head>
       
-      {/* 宽度由 max-w-2xl 放宽到 max-w-4xl (将近 900px 宽) */}
       <div className="w-full max-w-4xl bg-white rounded-2xl shadow-sm border border-blue-100 p-6 md:p-10">
         <h1 className="text-3xl font-bold text-blue-600 mb-2 text-center">English Rephrase Coach</h1>
         <p className="text-sm text-slate-500 mb-8 text-center">雅思 / FCE 口语换词跟练助手</p>
@@ -97,35 +109,34 @@ export default function RephraseApp() {
           onClick={handleSubmit} disabled={loading || !levels.lv1}
           className="w-full mt-10 bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 rounded-xl transition-all disabled:bg-slate-300 text-lg"
         >
-          {loading ? "AI 正在批改中..." : "提交并获取点评"}
+          {loading ? "AI 正在思考中..." : "提交并获取点评"}
         </button>
 
         {errorMsg && (
           <div className="mt-6 text-red-500 text-center font-medium">{errorMsg}</div>
         )}
 
-        {/* 结果展示区：分为左右两块或上下两块 */}
         {result && (
           <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-            {/* 左侧/上方：评估区域 */}
+            {/* 左侧点评，加上了 safeRender 保护 */}
             <div className="p-6 bg-slate-50 rounded-xl border border-slate-200 h-full">
               <h2 className="text-lg font-bold text-slate-700 mb-4 flex items-center">
                 <span className="bg-blue-100 text-blue-600 px-2 py-1 rounded text-sm mr-2">📝</span> 
                 教练点评
               </h2>
               <div className="whitespace-pre-wrap leading-relaxed text-slate-700">
-                {result.evaluation}
+                {safeRender(result.evaluation)}
               </div>
             </div>
 
-            {/* 右侧/下方：参考答案区域 */}
+            {/* 右侧范例，加上了 safeRender 保护 */}
             <div className="p-6 bg-blue-50 rounded-xl border border-blue-100 h-full">
               <h2 className="text-lg font-bold text-blue-800 mb-4 flex items-center">
                 <span className="bg-white text-blue-600 px-2 py-1 rounded shadow-sm text-sm mr-2">💡</span> 
                 地道表达参考
               </h2>
               <div className="whitespace-pre-wrap leading-relaxed text-slate-800">
-                {result.samples}
+                {safeRender(result.samples)}
               </div>
             </div>
           </div>
