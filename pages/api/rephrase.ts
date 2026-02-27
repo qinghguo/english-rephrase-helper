@@ -1,7 +1,10 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import OpenAI from 'openai';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
+// 初始化 OpenAI，自动读取 Vercel 里设置好的 OPENAI_API_KEY
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY || "",
+});
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -29,11 +32,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       Formatting: Markdown.
     `;
 
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
+    // 调用 GPT 模型（这里默认使用性价比最高的 gpt-3.5-turbo，如果你有 gpt-4 的权限也可以改名）
+    const completion = await openai.chat.completions.create({
+      messages: [{ role: "user", content: prompt }],
+      model: "gpt-3.5-turbo", 
+    });
     
-    res.status(200).json({ analysis: response.text() });
+    const text = completion.choices[0].message.content;
+    res.status(200).json({ analysis: text });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Internal Server Error' });
