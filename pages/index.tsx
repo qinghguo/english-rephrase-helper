@@ -7,18 +7,18 @@ type ResultData = { level1?: LevelFeedback, level2?: LevelFeedback, level3?: Lev
 export default function RephraseApp() {
   const [mode, setMode] = useState<'practice' | 'direct'>('practice');
   
-  // ================= 模式一（跟练）独立状态 =================
+  // ================= 🔐 独立记忆库 1：闯关跟练 =================
   const [topic, setTopic] = useState("Click '↻ AI 随机生成考题' to start!");
   const [levels, setLevels] = useState({ lv1: '', lv2: '', lv3: '' });
   const [practiceResult, setPracticeResult] = useState<ResultData | null>(null);
   const [practiceResultStandard, setPracticeResultStandard] = useState<'fce' | 'ielts'>('fce');
 
-  // ================= 模式二（直出）独立状态 =================
+  // ================= 🔐 独立记忆库 2：一键改写 =================
   const [directInput, setDirectInput] = useState(""); 
   const [directResult, setDirectResult] = useState<ResultData | null>(null);
   const [directResultStandard, setDirectResultStandard] = useState<'fce' | 'ielts'>('fce');
 
-  // ================= 公共控制状态 =================
+  // ================= ⚙️ 公共控制状态 =================
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
@@ -28,6 +28,7 @@ export default function RephraseApp() {
   const generateTopic = async () => {
     setGenerating(true);
     setTopic("AI 正在为您生成全新考题...");
+    // 只有点击出题时，才清空“模式一”的旧结果
     setPracticeResult(null); 
     setErrorMsg("");
     setLevels({ lv1: '', lv2: '', lv3: '' });
@@ -69,6 +70,7 @@ export default function RephraseApp() {
     if (!directInput.trim()) return;
     setLoading(true);
     setErrorMsg("");
+    // 只有提交新句子时，才清空“模式二”的旧结果
     setDirectResult(null); 
     try {
       const response = await fetch('/api/direct', {
@@ -152,7 +154,7 @@ export default function RephraseApp() {
       <div className="w-full max-w-6xl bg-white rounded-3xl shadow-sm border border-slate-200 p-8 md:p-14">
         <h1 className="text-3xl font-bold text-slate-800 mb-6 text-center">English Rephrase Coach</h1>
         
-        {/* 🚀 双模式切换选项卡 */}
+        {/* 🚀 顶层模式切换开关 (这里仅仅是切换视图，绝对不碰数据) */}
         <div className="flex justify-center mb-10">
           <div className="bg-slate-100 p-1.5 rounded-xl inline-flex shadow-inner">
             <button 
@@ -170,60 +172,62 @@ export default function RephraseApp() {
           </div>
         </div>
 
-        {/* ========== 模式一：闯关跟练 UI (用 CSS 控制隐藏显示) ========== */}
-        <div className={mode === 'practice' ? 'block animate-fade-in' : 'hidden'}>
-          <div className="bg-slate-800 text-white rounded-2xl p-8 mb-10 relative shadow-md">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Original Sentence</span>
-            <p className="text-2xl font-medium mt-3">{topic}</p>
-            <button 
-              onClick={generateTopic} disabled={generating}
-              className="absolute right-8 top-8 bg-white/10 hover:bg-white/20 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"
-            >
-              {generating ? "生成中..." : "↻ AI 随机生成考题"}
-            </button>
-          </div>
+        {/* ========== 模式一：闯关跟练 UI ========== */}
+        {mode === 'practice' ? (
+          <div className="animate-fade-in">
+            <div className="bg-slate-800 text-white rounded-2xl p-8 mb-10 relative shadow-md">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Original Sentence</span>
+              <p className="text-2xl font-medium mt-3">{topic}</p>
+              <button 
+                onClick={generateTopic} disabled={generating}
+                className="absolute right-8 top-8 bg-white/10 hover:bg-white/20 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"
+              >
+                {generating ? "生成中..." : "↻ AI 随机生成考题"}
+              </button>
+            </div>
 
-          <div className="space-y-8">
-            <div className="bg-white border border-slate-200 p-8 rounded-2xl shadow-sm">
-              <label className="text-lg font-bold text-slate-700 flex items-center mb-4"><span className="bg-blue-100 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center mr-3 text-sm">L1</span>词汇升级 (Synonyms)</label>
-              <input className="w-full p-4 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-400 outline-none text-xl bg-slate-50" placeholder="尝试换用高级词汇..." value={levels.lv1} onChange={(e) => setLevels({...levels, lv1: e.target.value})} />
-              <PracticeFeedbackBlock data={practiceResult?.level1} focusTitle="词汇运用" resultStandard={practiceResultStandard} />
-            </div>
-            <div className="bg-white border border-slate-200 p-8 rounded-2xl shadow-sm">
-              <label className="text-lg font-bold text-slate-700 flex items-center mb-4"><span className="bg-blue-100 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center mr-3 text-sm">L2</span>句式转换 (Structure)</label>
-              <input className="w-full p-4 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-400 outline-none text-xl bg-slate-50" placeholder="尝试改变句子结构..." value={levels.lv2} onChange={(e) => setLevels({...levels, lv2: e.target.value})} />
-              <PracticeFeedbackBlock data={practiceResult?.level2} focusTitle="句式结构" resultStandard={practiceResultStandard} />
-            </div>
-            <div className="bg-white border border-slate-200 p-8 rounded-2xl shadow-sm">
-              <label className="text-lg font-bold text-slate-700 flex items-center mb-4"><span className="bg-blue-100 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center mr-3 text-sm">L3</span>地道口语 (Idioms & Fillers)</label>
-              <input className="w-full p-4 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-400 outline-none text-xl bg-slate-50" placeholder="尝试加入连接词或习语..." value={levels.lv3} onChange={(e) => setLevels({...levels, lv3: e.target.value})} />
-              <PracticeFeedbackBlock data={practiceResult?.level3} focusTitle="地道表达" resultStandard={practiceResultStandard} />
+            <div className="space-y-8">
+              <div className="bg-white border border-slate-200 p-8 rounded-2xl shadow-sm">
+                <label className="text-lg font-bold text-slate-700 flex items-center mb-4"><span className="bg-blue-100 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center mr-3 text-sm">L1</span>词汇升级 (Synonyms)</label>
+                <input className="w-full p-4 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-400 outline-none text-xl bg-slate-50" placeholder="尝试换用高级词汇..." value={levels.lv1} onChange={(e) => setLevels({...levels, lv1: e.target.value})} />
+                <PracticeFeedbackBlock data={practiceResult?.level1} focusTitle="词汇运用" resultStandard={practiceResultStandard} />
+              </div>
+              <div className="bg-white border border-slate-200 p-8 rounded-2xl shadow-sm">
+                <label className="text-lg font-bold text-slate-700 flex items-center mb-4"><span className="bg-blue-100 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center mr-3 text-sm">L2</span>句式转换 (Structure)</label>
+                <input className="w-full p-4 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-400 outline-none text-xl bg-slate-50" placeholder="尝试改变句子结构..." value={levels.lv2} onChange={(e) => setLevels({...levels, lv2: e.target.value})} />
+                <PracticeFeedbackBlock data={practiceResult?.level2} focusTitle="句式结构" resultStandard={practiceResultStandard} />
+              </div>
+              <div className="bg-white border border-slate-200 p-8 rounded-2xl shadow-sm">
+                <label className="text-lg font-bold text-slate-700 flex items-center mb-4"><span className="bg-blue-100 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center mr-3 text-sm">L3</span>地道口语 (Idioms & Fillers)</label>
+                <input className="w-full p-4 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-400 outline-none text-xl bg-slate-50" placeholder="尝试加入连接词或习语..." value={levels.lv3} onChange={(e) => setLevels({...levels, lv3: e.target.value})} />
+                <PracticeFeedbackBlock data={practiceResult?.level3} focusTitle="地道表达" resultStandard={practiceResultStandard} />
+              </div>
             </div>
           </div>
-        </div>
-
-        {/* ========== 模式二：一键改写 UI (用 CSS 控制隐藏显示) ========== */}
-        <div className={mode === 'direct' ? 'block animate-fade-in' : 'hidden'}>
-          <div className="bg-blue-50 border border-blue-100 rounded-2xl p-8 mb-10 shadow-sm">
-            <label className="text-lg font-bold text-blue-800 mb-4 block">✏️ 输入你想打磨的句子</label>
-            <textarea 
-              className="w-full p-5 border border-blue-200 rounded-xl focus:ring-2 focus:ring-blue-400 outline-none text-2xl font-medium bg-white resize-none shadow-inner"
-              rows={3}
-              placeholder="例如: I want to tell you my idea about the new project..."
-              value={directInput} 
-              onChange={(e) => setDirectInput(e.target.value)} 
-            />
-          </div>
-
-          {directResult && (
-            <div className="space-y-6 mt-10">
-              <h2 className="text-xl font-bold text-slate-700 mb-6 text-center">✨ AI 改写方案</h2>
-              <DirectFeedbackBlock title="🎯 Level 1: 词汇升级 (Synonyms)" data={directResult.level1} resultStandard={directResultStandard} />
-              <DirectFeedbackBlock title="📐 Level 2: 句式转换 (Structure)" data={directResult.level2} resultStandard={directResultStandard} />
-              <DirectFeedbackBlock title="🗣️ Level 3: 地道口语 (Idioms & Fillers)" data={directResult.level3} resultStandard={directResultStandard} />
+        ) : (
+          /* ========== 模式二：一键改写 UI ========== */
+          <div className="animate-fade-in">
+            <div className="bg-blue-50 border border-blue-100 rounded-2xl p-8 mb-10 shadow-sm">
+              <label className="text-lg font-bold text-blue-800 mb-4 block">✏️ 输入你想打磨的句子</label>
+              <textarea 
+                className="w-full p-5 border border-blue-200 rounded-xl focus:ring-2 focus:ring-blue-400 outline-none text-2xl font-medium bg-white resize-none shadow-inner"
+                rows={3}
+                placeholder="例如: I want to tell you my idea about the new project..."
+                value={directInput} 
+                onChange={(e) => setDirectInput(e.target.value)} 
+              />
             </div>
-          )}
-        </div>
+
+            {directResult && (
+              <div className="space-y-6 mt-10">
+                <h2 className="text-xl font-bold text-slate-700 mb-6 text-center">✨ AI 改写方案</h2>
+                <DirectFeedbackBlock title="🎯 Level 1: 词汇升级 (Synonyms)" data={directResult.level1} resultStandard={directResultStandard} />
+                <DirectFeedbackBlock title="📐 Level 2: 句式转换 (Structure)" data={directResult.level2} resultStandard={directResultStandard} />
+                <DirectFeedbackBlock title="🗣️ Level 3: 地道口语 (Idioms & Fillers)" data={directResult.level3} resultStandard={directResultStandard} />
+              </div>
+            )}
+          </div>
+        )}
 
         {/* ========== 公共底部区：目标选择与提交 ========== */}
         <div className="mt-12 flex flex-col items-center border-t border-slate-100 pt-10">
