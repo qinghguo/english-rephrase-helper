@@ -15,23 +15,38 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const prompt = `
       你是一个专业的雅思/FCE英语口语教练。
-      请分析用户对以下句子的三次Rephrase（换种说法）尝试：
+      请分析用户对以下原句的三次不同维度的Rephrase（换种说法）尝试：
       原句: "${topic}"
 
       用户的输入：
-      - Level 1: ${lv1}
-      - Level 2: ${lv2}
-      - Level 3: ${lv3}
+      - Level 1 (词汇升级): ${lv1}
+      - Level 2 (句式转换): ${lv2}
+      - Level 3 (地道口语): ${lv3}
 
       要求：
-      请严格以合法的 JSON 格式输出，必须包含以下两个字段：
-      1. "evaluation": (使用中文) 针对用户的三个level进行专业点评。指出语法错误、用词优点，并给出一个预估的雅思口语分数。排版要清晰易读。
-      2. "samples": (使用中文加英文) 提供不少于3种更地道、更高级的参考答案，并附带简短的中文解析说明好在哪里。
+      请严格以合法的 JSON 格式输出，必须包含 "level1", "level2", "level3" 三个核心字段。
+      在这三个字段内部，必须包含 "evaluation" 和 "samples" 两个子字段。
 
-      不要输出任何除了 JSON 以外的内容。
+      具体关注点与点评要求：
+      1. level1：
+         - evaluation (中文): 专注点评【词汇替换】是否准确、高级。
+         - samples (中英双语): 提供不少于 3 种侧重【词汇升级】的高分参考答案。
+      2. level2：
+         - evaluation (中文): 专注点评【句式结构】（如被动语态、从句、强调句、非谓语等）的运用。
+         - samples (中英双语): 提供不少于 3 种侧重【句式变换】的高分参考答案。
+      3. level3：
+         - evaluation (中文): 专注点评【地道感】（如俚语、固定搭配、连接词、phrasal verbs等）。
+         - samples (中英双语): 提供不少于 3 种侧重【地道口语表达】的高分参考答案。
+
+      示例 JSON 结构：
+      {
+        "level1": { "evaluation": "...", "samples": "..." },
+        "level2": { "evaluation": "...", "samples": "..." },
+        "level3": { "evaluation": "...", "samples": "..." }
+      }
+      绝对不要输出任何除了 JSON 以外的内容。
     `;
 
-    // 使用 response_format 强制 OpenAI 输出 JSON
     const completion = await openai.chat.completions.create({
       messages: [{ role: "user", content: prompt }],
       model: "gpt-3.5-turbo",
@@ -43,7 +58,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       throw new Error("No response");
     }
 
-    // 将 AI 返回的 JSON 文本解析成对象并返回给前端
     const parsedData = JSON.parse(text);
     res.status(200).json(parsedData);
 
